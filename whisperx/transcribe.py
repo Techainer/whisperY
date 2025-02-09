@@ -30,7 +30,7 @@ def cli():
     parser.add_argument("--verbose", type=str2bool, default=True, help="whether to print out the progress and debug messages")
 
     parser.add_argument("--task", type=str, default="transcribe", choices=["transcribe", "translate"], help="whether to perform X->X speech recognition ('transcribe') or X->English translation ('translate')")
-    parser.add_argument("--language", type=str, default=None, choices=sorted(LANGUAGES.keys()) + sorted([k.title() for k in TO_LANGUAGE_CODE.keys()]), help="language spoken in the audio, specify None to perform language detection")
+    parser.add_argument("--language", type=str, default='vi', choices=sorted(LANGUAGES.keys()) + sorted([k.title() for k in TO_LANGUAGE_CODE.keys()]), help="language spoken in the audio, specify None to perform language detection")
 
     # alignment params
     parser.add_argument("--align_model", default=None, help="Name of phoneme-level ASR model to do alignment")
@@ -39,8 +39,8 @@ def cli():
     parser.add_argument("--return_char_alignments", action='store_true', help="Return character-level alignments in the output json file")
 
     # vad params
-    parser.add_argument("--vad_onset", type=float, default=0.500, help="Onset threshold for VAD (see pyannote.audio), reduce this if speech is not being detected")
-    parser.add_argument("--vad_offset", type=float, default=0.363, help="Offset threshold for VAD (see pyannote.audio), reduce this if speech is not being detected.")
+    parser.add_argument("--vad_onset", type=float, default=0.8, help="Onset threshold for VAD (see pyannote.audio), reduce this if speech is not being detected")
+    parser.add_argument("--vad_offset", type=float, default=0.5, help="Offset threshold for VAD (see pyannote.audio), reduce this if speech is not being detected.")
     parser.add_argument("--chunk_size", type=int, default=30, help="Chunk size for merging VAD segments. Default is 30, reduce this if the chunk is too long.")
 
     # diarization params
@@ -75,7 +75,7 @@ def cli():
 
     parser.add_argument("--hf_token", type=str, default=None, help="Hugging Face Access Token to access PyAnnote gated models")
 
-    parser.add_argument("--print_progress", type=str2bool, default = False, help = "if True, progress will be printed in transcribe() and align() methods.")
+    parser.add_argument("--print_progress", type=str2bool, default=False, help = "if True, progress will be printed in transcribe() and align() methods.")
     # fmt: on
 
     args = parser.parse_args().__dict__
@@ -166,7 +166,6 @@ def cli():
     # Part 1: VAD & ASR Loop
     results = []
     tmp_results = []
-    # model = load_model(model_name, device=device, download_root=model_dir)
     model = load_model(model_name, device=device, device_index=device_index, download_root=model_dir, compute_type=compute_type, language=args['language'], asr_options=asr_options, vad_options={"vad_onset": vad_onset, "vad_offset": vad_offset}, task=task, threads=faster_whisper_threads)
 
     for audio_path in args.pop("audio"):

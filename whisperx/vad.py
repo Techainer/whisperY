@@ -18,7 +18,7 @@ from .diarize import Segment as SegmentX
 # deprecated
 VAD_SEGMENTATION_URL = "https://whisperx.s3.eu-west-2.amazonaws.com/model_weights/segmentation/0b5b3216d60a2d32fc086b47ea8c67589aaeb26b7e07fcbe620d6d0b83e209ea/pytorch_model.bin"
 
-def load_vad_model(device, vad_onset=0.500, vad_offset=0.363, use_auth_token=None, model_fp=None):
+def load_vad_model(device, vad_onset=0.800, vad_offset=0.5, use_auth_token=None, model_fp=None):
     model_dir = torch.hub._get_torch_home()
 
     vad_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,10 +45,12 @@ def load_vad_model(device, vad_onset=0.500, vad_offset=0.363, use_auth_token=Non
         )
 
     vad_model = Model.from_pretrained(model_fp, use_auth_token=use_auth_token)
-    hyperparameters = {"onset": vad_onset, 
-                    "offset": vad_offset,
-                    "min_duration_on": 0.1,
-                    "min_duration_off": 0.1}
+    hyperparameters = {
+        "onset": vad_onset, 
+        "offset": vad_offset,
+        "min_duration_on": 0.5,
+        "min_duration_off": 0.1
+    }
     vad_pipeline = VoiceActivitySegmentation(segmentation=vad_model, device=torch.device(device))
     vad_pipeline.instantiate(hyperparameters)
 
@@ -300,8 +302,8 @@ def merge_chunks(
         speaker_idxs.append(seg.speaker)
     # add final
     merged_segments.append({ 
-                "start": curr_start,
-                "end": curr_end,
-                "segments": seg_idxs,
-            })    
+        "start": curr_start,
+        "end": curr_end,
+        "segments": seg_idxs,
+    })    
     return merged_segments
