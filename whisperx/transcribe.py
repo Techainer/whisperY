@@ -10,8 +10,15 @@ from .alignment import align, load_align_model
 from .asr import load_model
 from .audio import load_audio
 from .diarize import DiarizationPipeline, assign_word_speakers
-from .utils import (LANGUAGES, TO_LANGUAGE_CODE, get_writer, optional_float,
-                    optional_int, str2bool)
+from .types import AlignedTranscriptionResult, TranscriptionResult
+from .utils import (
+    LANGUAGES,
+    TO_LANGUAGE_CODE,
+    get_writer,
+    optional_float,
+    optional_int,
+    str2bool,
+)
 
 
 def cli():
@@ -19,6 +26,7 @@ def cli():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument("audio", nargs="+", type=str, help="audio file(s) to transcribe")
     parser.add_argument("--model", default="small", help="name of the Whisper model to use")
+    parser.add_argument("--model_cache_only", type=str2bool, default=False, help="If True, will not attempt to download models, instead using cached models from --model_dir")
     parser.add_argument("--model_dir", type=str, default=None, help="the path to save model files; uses ~/.cache/whisper by default")
     parser.add_argument("--device", default="cuda" if torch.cuda.is_available() else "cpu", help="device to use for PyTorch inference")
     parser.add_argument("--device_index", default=0, type=int, help="device index to use for FasterWhisper inference")
@@ -82,11 +90,13 @@ def cli():
     model_name: str = args.pop("model")
     batch_size: int = args.pop("batch_size")
     model_dir: str = args.pop("model_dir")
+    model_cache_only: bool = args.pop("model_cache_only")
     output_dir: str = args.pop("output_dir")
     output_format: str = args.pop("output_format")
     device: str = args.pop("device")
     device_index: int = args.pop("device_index")
     compute_type: str = args.pop("compute_type")
+    verbose: bool = args.pop("verbose")
 
     # model_flush: bool = args.pop("model_flush")
     os.makedirs(output_dir, exist_ok=True)
@@ -94,7 +104,7 @@ def cli():
     align_model: str = args.pop("align_model")
     interpolate_method: str = args.pop("interpolate_method")
     no_align: bool = args.pop("no_align")
-    task : str = args.pop("task")
+    task: str = args.pop("task")
     if task == "translate":
         # translation cannot be aligned
         no_align = True
@@ -102,6 +112,7 @@ def cli():
     return_char_alignments: bool = args.pop("return_char_alignments")
 
     hf_token: str = args.pop("hf_token")
+    vad_method: str = args.pop("vad_method")
     vad_onset: float = args.pop("vad_onset")
     vad_offset: float = args.pop("vad_offset")
 
@@ -172,7 +183,13 @@ def cli():
         audio = load_audio(audio_path)
         # >> VAD & ASR
         print(">>Performing transcription...")
-        result = model.transcribe(audio, batch_size=batch_size, chunk_size=chunk_size, print_progress=print_progress)
+        result: TranscriptionResult = model.transcribe(
+            audio,
+            batch_size=batch_size,
+            chunk_size=chunk_size,
+            print_progress=print_progress,
+            verbose=verbose,
+        )
         results.append((result, audio_path))
 
     # Unload Whisper and VAD
@@ -199,7 +216,16 @@ def cli():
                     print(f"New language found ({result['language']})! Previous was ({align_metadata['language']}), loading new alignment model for new language...")
                     align_model, align_metadata = load_align_model(result["language"], device)
                 print(">>Performing alignment...")
-                result = align(result["segments"], align_model, align_metadata, input_audio, device, interpolate_method=interpolate_method, return_char_alignments=return_char_alignments, print_progress=print_progress)
+                result: AlignedTranscriptionResult = align(
+                    result["segments"],
+                    align_model,
+                    align_metadata,
+                    input_audio,
+                    device,
+                    interpolate_method=interpolate_method,
+                    return_char_alignments=return_char_alignments,
+                    print_progress=print_progress,
+                )
 
             results.append((result, audio_path))
 
