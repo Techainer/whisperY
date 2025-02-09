@@ -1,4 +1,4 @@
-<h1 align="center">WhisperX</h1>
+<h1 align="center">WhisperY</h1>
 
 <p align="center">
   <a href="https://github.com/m-bain/whisperX/stargazers">
