@@ -260,37 +260,37 @@ class Pyannote(Vad):
         for speech_turn in segments.get_timeline():
             segments_list.append(SegmentX(speech_turn.start, speech_turn.end, "UNKNOWN"))
 
-    assert chunk_size > 0
-    binarize = Binarize(max_duration=chunk_size, onset=onset, offset=offset)
-    segments = binarize(segments)
-    segments_list = []
-    for speech_turn in segments.get_timeline():
-        segments_list.append(SegmentX(speech_turn.start, speech_turn.end, "UNKNOWN"))
+        assert chunk_size > 0
+        binarize = Binarize(max_duration=chunk_size, onset=onset, offset=offset)
+        segments = binarize(segments)
+        segments_list = []
+        for speech_turn in segments.get_timeline():
+            segments_list.append(SegmentX(speech_turn.start, speech_turn.end, "UNKNOWN"))
 
-    if len(segments_list) == 0:
-        print("No active speech found in audio")
-        return []
-    # assert segments_list, "segments_list is empty."
-    # Make sur the starting point is the start of the segment.
-    curr_start = segments_list[0].start
+        if len(segments_list) == 0:
+            print("No active speech found in audio")
+            return []
+        # assert segments_list, "segments_list is empty."
+        # Make sur the starting point is the start of the segment.
+        curr_start = segments_list[0].start
 
-    for seg in segments_list:
-        if seg.end - curr_start > chunk_size and curr_end-curr_start > 0:
-            merged_segments.append({
-                "start": curr_start,
-                "end": curr_end,
-                "segments": seg_idxs,
-            })
-            curr_start = seg.start
-            seg_idxs = []
-            speaker_idxs = []
-        curr_end = seg.end
-        seg_idxs.append((seg.start, seg.end))
-        speaker_idxs.append(seg.speaker)
-    # add final
-    merged_segments.append({ 
-        "start": curr_start,
-        "end": curr_end,
-        "segments": seg_idxs,
-    })    
-    return merged_segments
+        for seg in segments_list:
+            if seg.end - curr_start > chunk_size and curr_end-curr_start > 0:
+                merged_segments.append({
+                    "start": curr_start,
+                    "end": curr_end,
+                    "segments": seg_idxs,
+                })
+                curr_start = seg.start
+                seg_idxs = []
+                speaker_idxs = []
+            curr_end = seg.end
+            seg_idxs.append((seg.start, seg.end))
+            speaker_idxs.append(seg.speaker)
+        # add final
+        merged_segments.append({ 
+            "start": curr_start,
+            "end": curr_end,
+            "segments": seg_idxs,
+        })    
+        return merged_segments

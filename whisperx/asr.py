@@ -11,13 +11,16 @@ import torch
 from tqdm import tqdm
 from transformers import Pipeline
 from transformers import AutoTokenizer
+from faster_whisper.tokenizer import Tokenizer
 from transformers.pipelines.pt_utils import PipelineIterator
 from transformers import WhisperForConditionalGeneration, AutoProcessor
 import whisper
 
 from .audio import N_SAMPLES, SAMPLE_RATE, load_audio, log_mel_spectrogram, pad_or_trim
-from .vad import load_vad_model, merge_chunks
+# from .vad import load_vad_model, merge_chunks
+from whisperx.vads import Vad, Silero, Pyannote
 from .types import TranscriptionResult, SingleSegment
+from faster_whisper.transcribe import TranscriptionOptions, get_ctranslate2_storage
 
 def find_numeral_symbol_tokens(tokenizer):
     numeral_symbol_tokens = []
@@ -542,7 +545,7 @@ def load_model(
         "word_timestamps": False,
         "prepend_punctuations": "\"'“¿([{-",
         "append_punctuations": "\"'.。,，!！?？:：”)]}、",
-        "multilingual": model.model.is_multilingual,
+        "multilingual": True,
         "suppress_numerals": False,
         "max_new_tokens": None,
         "clip_timestamps": None,
