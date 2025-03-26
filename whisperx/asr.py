@@ -418,8 +418,6 @@ class FasterWhisperPipeline(Pipeline):
                     self.tokenizer = faster_whisper.tokenizer.Tokenizer(self.model.hf_tokenizer,
                                                                         self.model.model.is_multilingual, task=task,
                                                                         language=language)
-        print("tokenizer:", self.tokenizer)
-
         if self.suppress_numerals:
             previous_suppress_tokens = self.options.suppress_tokens
             numeral_symbol_tokens = find_numeral_symbol_tokens(self.tokenizer)
@@ -431,7 +429,7 @@ class FasterWhisperPipeline(Pipeline):
         segments: List[SingleSegment] = []
         batch_size = batch_size or self._batch_size
         total_segments = len(vad_segments)
-        
+
         print("total_segments:", total_segments)
         
         for idx, out in enumerate(self.__call__(data(audio, vad_segments), batch_size=batch_size, num_workers=num_workers)):
