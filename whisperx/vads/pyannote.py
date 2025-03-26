@@ -1,6 +1,4 @@
-import hashlib
 import os
-import urllib
 from typing import Callable, Text, Union
 from typing import Optional
 
@@ -12,10 +10,10 @@ from pyannote.audio.pipelines import VoiceActivityDetection
 from pyannote.audio.pipelines.utils import PipelineModel
 from pyannote.core import Annotation, SlidingWindowFeature
 from pyannote.core import Segment
-from tqdm import tqdm
 
 from whisperx.diarize import Segment as SegmentX
 from whisperx.vads.vad import Vad
+
 
 def load_vad_model(device, vad_onset=0.800, vad_offset=0.5, use_auth_token=None, model_fp=None):
     model_dir = torch.hub._get_torch_home()
@@ -40,12 +38,10 @@ def load_vad_model(device, vad_onset=0.800, vad_offset=0.5, use_auth_token=None,
     model_bytes = open(model_fp, "rb").read()
 
     vad_model = Model.from_pretrained(model_fp, use_auth_token=use_auth_token)
-    hyperparameters = {
-        "onset": vad_onset, 
-        "offset": vad_offset,
-        "min_duration_on": 0.5,
-        "min_duration_off": 0.1
-    }
+    hyperparameters = {"onset": vad_onset,
+                    "offset": vad_offset,
+                    "min_duration_on": 0.5,
+                    "min_duration_off": 0.1}
     vad_pipeline = VoiceActivitySegmentation(segmentation=vad_model, device=torch.device(device))
     vad_pipeline.instantiate(hyperparameters)
 
@@ -260,37 +256,8 @@ class Pyannote(Vad):
         for speech_turn in segments.get_timeline():
             segments_list.append(SegmentX(speech_turn.start, speech_turn.end, "UNKNOWN"))
 
-        assert chunk_size > 0
-        binarize = Binarize(max_duration=chunk_size, onset=onset, offset=offset)
-        segments = binarize(segments)
-        segments_list = []
-        for speech_turn in segments.get_timeline():
-            segments_list.append(SegmentX(speech_turn.start, speech_turn.end, "UNKNOWN"))
-
         if len(segments_list) == 0:
             print("No active speech found in audio")
             return []
-        # assert segments_list, "segments_list is empty."
-        # Make sur the starting point is the start of the segment.
-        curr_start = segments_list[0].start
-
-        for seg in segments_list:
-            if seg.end - curr_start > chunk_size and curr_end-curr_start > 0:
-                merged_segments.append({
-                    "start": curr_start,
-                    "end": curr_end,
-                    "segments": seg_idxs,
-                })
-                curr_start = seg.start
-                seg_idxs = []
-                speaker_idxs = []
-            curr_end = seg.end
-            seg_idxs.append((seg.start, seg.end))
-            speaker_idxs.append(seg.speaker)
-        # add final
-        merged_segments.append({ 
-            "start": curr_start,
-            "end": curr_end,
-            "segments": seg_idxs,
-        })    
-        return merged_segments
+        assert segments_list, "segments_list is empty."
+        return Vad.merge_chunks(segments_list, chunk_size, onset, offset)
