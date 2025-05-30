@@ -11,13 +11,16 @@ import torch
 from tqdm import tqdm
 from transformers import Pipeline
 from transformers import AutoTokenizer
+from faster_whisper.tokenizer import Tokenizer
 from transformers.pipelines.pt_utils import PipelineIterator
 from transformers import WhisperForConditionalGeneration, AutoProcessor
 import whisper
 
 from .audio import N_SAMPLES, SAMPLE_RATE, load_audio, log_mel_spectrogram, pad_or_trim
-from .vad import load_vad_model, merge_chunks
+# from .vad import load_vad_model, merge_chunks
+from whisperx.vads import Vad, Silero, Pyannote
 from .types import TranscriptionResult, SingleSegment
+from faster_whisper.transcribe import TranscriptionOptions, get_ctranslate2_storage
 
 def find_numeral_symbol_tokens(tokenizer):
     numeral_symbol_tokens = []
@@ -374,7 +377,7 @@ class FasterWhisperPipeline(Pipeline):
         return final_iterator
 
     def transcribe(
-        self, audio: Union[str, np.ndarray], batch_size=None, num_workers=0, language='vi', task='transcribe', chunk_size=30, print_progress = False, combined_progress=False
+        self, audio: Union[str, np.ndarray], batch_size=None, num_workers=0, language='vi', task='transcribe', chunk_size=30, print_progress = True, combined_progress=False
     ):
         if isinstance(audio, str):
             audio = load_audio(audio)
@@ -415,7 +418,6 @@ class FasterWhisperPipeline(Pipeline):
                     self.tokenizer = faster_whisper.tokenizer.Tokenizer(self.model.hf_tokenizer,
                                                                         self.model.model.is_multilingual, task=task,
                                                                         language=language)
-                
         if self.suppress_numerals:
             previous_suppress_tokens = self.options.suppress_tokens
             numeral_symbol_tokens = find_numeral_symbol_tokens(self.tokenizer)
@@ -427,6 +429,9 @@ class FasterWhisperPipeline(Pipeline):
         segments: List[SingleSegment] = []
         batch_size = batch_size or self._batch_size
         total_segments = len(vad_segments)
+
+        print("total_segments:", total_segments)
+        
         for idx, out in enumerate(self.__call__(data(audio, vad_segments), batch_size=batch_size, num_workers=num_workers)):
             if print_progress:
                 base_progress = ((idx + 1) / total_segments) * 100
@@ -542,7 +547,7 @@ def load_model(
         "word_timestamps": False,
         "prepend_punctuations": "\"'“¿([{-",
         "append_punctuations": "\"'.。,，!！?？:：”)]}、",
-        "multilingual": model.model.is_multilingual,
+        "multilingual": True,
         "suppress_numerals": False,
         "max_new_tokens": None,
         "clip_timestamps": None,

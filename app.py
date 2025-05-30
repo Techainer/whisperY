@@ -35,15 +35,16 @@ def transcribe_file(audio_file, batch_size, chunk_size, progress=gr.State()):
     """
     Transcribe the given audio file with user-defined settings.
     """
+    print("transcribe_file")
     transcription = ""  # Initialize an empty string to accumulate results
     start_time = time.time()
     
     if audio_file is None or not os.path.exists(audio_file):
+        print("Please download file before run transcribe!")
         return "Please download file before run transcribe!", ""
     try:
         # Load the audio file
         audio = load_audio(audio_file)
-        
         # Perform transcription
         for result in model.transcribe(audio, batch_size=batch_size, chunk_size=chunk_size):
             if isinstance(result, str): 
@@ -56,7 +57,7 @@ def transcribe_file(audio_file, batch_size, chunk_size, progress=gr.State()):
 
 # Define the Gradio app
 with gr.Blocks() as app:
-    gr.Markdown("# Audio and Video Transcription App")
+    gr.Markdown("# Techainer AI - Speech to Text")
     gr.Markdown("Upload file (video/audio) or provide a YouTube video URL to get its transcription.")
 
     with gr.Tab("Transcribe File"):
