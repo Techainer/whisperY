@@ -84,26 +84,6 @@ See other methods [here.](https://pytorch.org/get-started/previous-versions/#v20
 
 You have several installation options:
 
-#### Option A: Stable Release (recommended)
-Install the latest stable version from PyPI:
-
-```bash
-pip install whisperx
-```
-
-#### Option B: Development Version
-Install the latest development version directly from GitHub (may be unstable):
-
-```bash
-pip install git+https://github.com/m-bain/whisperx.git
-```
-
-If already installed, update to the most recent commit:
-
-```bash
-pip install git+https://github.com/m-bain/whisperx.git --upgrade
-```
-
 #### Option C: Development Mode
 If you wish to modify the package, clone and install in editable mode:
 ```bash
@@ -115,6 +95,14 @@ pip install -e .
 > **Note**: The development version may contain experimental features and bugs. Use the stable PyPI release for production environments.
 
 You may also need to install ffmpeg, rust etc. Follow openAI instructions here https://github.com/openai/whisper#setup.
+
+### 4. Run gradio demo
+```bash
+python app.py
+
+# Gradio app: https://localhost:7860
+```
+
 
 ### Speaker Diarization
 To **enable Speaker Diarization**, include your Hugging Face access token (read) that you can generate from [Here](https://huggingface.co/settings/tokens) after the `--hf_token` argument and accept the user agreement for the following models: [Segmentation](https://huggingface.co/pyannote/segmentation-3.0) and [Speaker-Diarization-3.1](https://huggingface.co/pyannote/speaker-diarization-3.1) (if you choose to use Speaker-Diarization 2.x, follow requirements [here](https://huggingface.co/pyannote/speaker-diarization) instead.)
